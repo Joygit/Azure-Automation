@@ -1,0 +1,16 @@
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+.DS_Store
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.tfvars
+!env/**/*.tfvars
+crash.log
+override.tf
+tfplan
+.env
