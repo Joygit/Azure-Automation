@@ -52,3 +52,26 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+# ✅ SYSTEM ASSIGNED IDENTITY
+variable "system_assigned_identity" {
+  description = "Enable system assigned managed identity"
+  type        = bool
+  default     = true
+}
+
+# ✅ RUNBOOKS (Important)
+variable "automation_runbooks" {
+  description = "Automation runbooks configuration"
+  type = map(map(object({
+    name         = string
+    runbook_type = string
+    runtime      = optional(string)
+    content      = optional(string)
+    description  = string
+    log_verbose  = optional(bool, false)
+    log_progress = optional(bool, false)
+    file_path    = optional(string)
+  })))
+  default = {}
+}
