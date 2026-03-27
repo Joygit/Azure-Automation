@@ -96,7 +96,7 @@ This configuration uses the `azure-avm-automation-test` module from GitHub:
 
 ```hcl
 module "azure_automation" {
-  source = "github.com/Joygit/Azure-avm-automation-test?ref=v0.0.1"
+  source = "github.com/Joygit/Azure-avm-automation-test?ref=Master"
   ...
 }
 ```
