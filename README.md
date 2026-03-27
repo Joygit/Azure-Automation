@@ -3,7 +3,7 @@
 Simple Terraform configuration for Azure Automation Account deployment in Test environment using the Azure-avm-automation-test module from GitHub.
 
 **Module Source:** [github.com/Joygit/Azure-avm-automation-test](https://github.com/Joygit/Azure-avm-automation-test)  
-**Version:** v0.0.1
+**Version:** ref = Master
 
 ## Project Structure
 
@@ -17,7 +17,7 @@ Simple Terraform configuration for Azure Automation Account deployment in Test e
 ├── README.md
 └── env/
     └── test/
-        └── test.tfvars       # Test environment configuration
+        └── test.tfvars      # Test environment configuration
 ```
 
 ## Prerequisites
