@@ -1,109 +1,183 @@
-# Azure Automation Account Terraform
+# Azure Automation using Terraform
 
-Simple Terraform configuration for Azure Automation Account deployment in Test environment using the Azure-avm-automation-test module from GitHub.
+## Overview
 
-**Module Source:** [github.com/Joygit/Azure-avm-automation-test](https://github.com/Joygit/Azure-avm-automation-test)  
-**Version:** ref = Master
+This repository provisions Azure Automation Accounts and Runbooks using Terraform. It supports multiple environments, multiple automation accounts, and multiple runbooks per account. The implementation allows flexible script sourcing using local files, inline content, or remote repositories.
 
-## Project Structure
+## Repository Structure
 
-```
-├── terraform.tf              # Provider and version configuration
-├── variables.tf              # Variable definitions
-├── data.tf                   # Resource Group creation
-├── main.tf                   # Module reference (from GitHub)
-├── outputs.tf                # Output values
-├── .gitignore
-├── README.md
-└── env/
-    └── test/
-        └── test.tfvars      # Test environment configuration
-```
+The repository is organized to separate infrastructure code, environment configurations, and runbook scripts.
+
+* main.tf: Core resource definitions
+* variables.tf: Input variable definitions
+* locals.tf: Data transformation and iteration logic
+* scripts/: PowerShell scripts used by runbooks
+* envs/: Environment-specific variable files (dev, test, prod)
+
+Example structure:
+
+Azure-Automation/
+├── main.tf
+├── variables.tf
+├── locals.tf
+├── scripts/
+│   ├── startvm.ps1
+│   └── stopvm.ps1
+└── envs/
+├── dev/terraform.tfvars
+├── test/terraform.tfvars
+└── prod/terraform.tfvars
 
 ## Prerequisites
 
-1. **Azure Subscription** - Valid Pay-As-You-Go subscription
-2. **Terraform Installed** - Version >= 1.0
-3. **Azure CLI** - Install `az` command
+Ensure the following tools are installed:
 
-## Setup
+* Terraform (latest stable version)
+* Azure CLI
+* Git
+* Active Azure subscription
 
-### 1. Authenticate to Azure
+Login to Azure:
 
-```bash
 az login
-az account show  # Verify you're in the correct subscription
-```
 
-### 2. Get Your Subscription ID
+Set the subscription:
 
-```bash
-az account show --query id -o tsv
-```
+az account set --subscription "<SUBSCRIPTION_ID>"
 
-### 3. Update tfvars File
+Verify subscription:
 
-Edit `env/test/test.tfvars`:
+az account show
 
-```hcl
-subscription_id = "YOUR_ACTUAL_SUBSCRIPTION_ID"  # Replace with output from above
-resource_group_name = "rg-azure-automation-test"
-...
-```
+## Terraform Deployment
 
-## Usage
+Run all commands from the root directory of the repository.
 
-### Deploy
+Initialize Terraform:
 
-```bash
-cd env/test
-terraform init -var-file="test.tfvars"
-terraform plan -var-file="test.tfvars"
-terraform apply -var-file="test.tfvars"
-```
+terraform init
 
-### View Outputs
+Validate configuration:
 
-```bash
-terraform output
-```
+terraform validate
 
-### Cleanup
+Plan deployment:
 
-```bash
-terraform destroy -var-file="test.tfvars"
-```
+terraform plan -var-file="envs/test/terraform.tfvars"
 
-## Variables
+Apply changes:
 
-- `subscription_id` - Your Azure Subscription ID (required)
-- `resource_group_name` - Resource Group name (created by Terraform)
-- `location` - Azure region (default: eastus)
-- `automation_account_name` - Automation Account name (required)
-- `environment` - Environment name (test)
-- `sku_name` - SKU: Basic or Free (default: Basic)
-- `tags` - Resource tags
+terraform apply -var-file="envs/test/terraform.tfvars"
 
-## What Gets Created
+Destroy resources (if needed):
 
-✅ Resource Group
-✅ Automation Account (via GitHub module v0.0.1)
-✅ System-Assigned Managed Identity
+terraform destroy -var-file="envs/test/terraform.tfvars"
 
-## Module Details
+## Runbook Configuration
 
-This configuration uses the `azure-avm-automation-test` module from GitHub:
+Runbooks are defined in the environment-specific tfvars file using a nested map structure.
 
-```hcl
-module "azure_automation" {
-  source = "github.com/Joygit/Azure-avm-automation-test?ref=v0.0.1"
-  ...
+Example:
+
+automation_runbooks = {
+"aa-automation-test" = {
+startVM = {
+name         = "startVM"
+runbook_type = "PowerShell72"
+runtime      = 7.2
+description  = "Start VM"
+log_verbose  = true
+log_progress = true
+file_path    = "scripts/startvm.ps1"
 }
-```
+}
+}
 
-## Notes
+Each automation account can contain multiple runbooks. Resources are dynamically created using Terraform iteration.
 
-- **RG Created Together**: Resource Group and Automation Account are created in one Terraform run
-- **Authentication**: Uses `az login` (no service principal needed for practice)
-- **Managed Identity**: Automatically created for secure operations
-- **Module Source**: Uses latest stable release (v0.0.1) from GitHub
+## Script Sourcing Options
+
+The solution supports multiple ways to define runbook content.
+
+Local file/ same repo file:
+
+file_path = "scripts/startvm.ps1"
+
+Remote script:
+
+script_uri = "https://raw.githubusercontent.com/<repo>/<branch>/scripts/startvm.ps1"
+
+Inline content:
+
+content = <<EOF
+Write-Output "Starting VM"
+EOF
+
+Only one method should be used per runbook.
+
+## Runbook Type and Runtime
+
+The runbook_type must match the supported value for your provider and Azure environment.
+
+In this implementation:
+
+* "PowerShell" is used for PowerShell 5.1
+* "PowerShell72" is used for PowerShell 7.2
+
+Ensure the correct value is used based on your environment. Using unsupported values may result in deployment errors.
+
+## Important Notes
+
+* The file() function reads paths relative to the Terraform root directory, not the tfvars location
+* Use only one of content, file_path, or script_uri per runbook
+* Ensure scripts exist at the specified path before running Terraform
+* Keep environment configurations separate using envs folders
+
+## Git Workflow
+
+Clone the repository:
+
+git clone https://github.com/Joygit/Azure-Automation.git
+
+Navigate to the working directory:
+
+cd Azure-Automation/Azure-Automation/Azure-Automation
+
+Create a new branch:
+
+git checkout -b feature/update-runbooks
+
+Add changes:
+
+git add .
+
+Commit changes:
+
+git commit -m "Updated automation runbook configuration"
+
+Push changes:
+
+git push origin feature/update-runbooks
+
+Pull latest changes:
+
+git pull origin Master
+
+## Best Practices
+
+* Keep scripts in the scripts directory
+* Use environment-specific tfvars files
+* Avoid hardcoding values in Terraform code
+* Use version-controlled scripts for production environments
+* Validate and review plans before applying
+
+## Future Enhancements
+
+* Add scheduling for runbooks
+* Integrate monitoring and alert-based triggers
+* Implement CI/CD pipelines
+
+
+## License
+
+This project can be used for learning and internal implementation. Update licensing as required.
